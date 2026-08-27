@@ -7,6 +7,10 @@ export function api(path: string): string {
   return `${apiBaseUrl}${path}`;
 }
 
+/** 1×1 PNG used in tests as a known-good data URL. */
+export const TINY_PNG_DATA_URL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
 export function makeContact(overrides: Partial<Contact> = {}): Contact {
   const first_name = overrides.first_name ?? "Ada";
   const last_name = overrides.last_name ?? "Lovelace";
@@ -25,6 +29,7 @@ export function makeContact(overrides: Partial<Contact> = {}): Contact {
     postal_code: null,
     country: "USA",
     notes: null,
+    photo: null,
     created_at: "2026-08-19T17:04:53.743932Z",
     updated_at: "2026-08-19T17:04:53.743936Z",
     full_name: `${first_name} ${last_name}`,

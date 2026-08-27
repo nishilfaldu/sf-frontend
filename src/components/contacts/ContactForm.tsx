@@ -4,9 +4,13 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { AlertCircle, Loader2 } from "lucide-react";
+import PhotoField from "@/components/contacts/PhotoField";
 import Field from "@/components/ui/Field";
 import Button, { buttonClasses } from "@/components/ui/Button";
-import { CONTACT_FIELD_GROUPS } from "@/lib/contacts/schema";
+import {
+  CONTACT_FIELD_GROUPS,
+  type ContactFieldSpec,
+} from "@/lib/contacts/schema";
 import {
   EMPTY_FORM_STATE,
   type Contact,
@@ -30,6 +34,37 @@ function SubmitButton({ label }: { label: string }) {
       {pending ? "Saving…" : label}
     </Button>
   );
+}
+
+function ContactFieldControl({
+  field,
+  contact,
+  value,
+  error,
+}: {
+  field: ContactFieldSpec;
+  contact?: Contact;
+  value: string;
+  error?: string;
+}) {
+  switch (field.type) {
+    case "photo":
+      return (
+        <div className={field.wide ? "sm:col-span-2" : undefined}>
+          <PhotoField defaultPhoto={value} contact={contact} error={error} />
+        </div>
+      );
+    case "textarea":
+    case "email":
+    case "tel":
+    case "text":
+    case undefined:
+      return <Field field={field} defaultValue={value} error={error} />;
+    default: {
+      const _exhaustive: never = field;
+      return _exhaustive;
+    }
+  }
 }
 
 /**
@@ -85,10 +120,11 @@ export default function ContactForm({
 
           <div className="grid gap-4 sm:grid-cols-2">
             {group.fields.map((field) => (
-              <Field
+              <ContactFieldControl
                 key={field.name}
                 field={field}
-                defaultValue={valueFor(field.name)}
+                contact={contact}
+                value={valueFor(field.name)}
                 error={state.fieldErrors?.[field.name]}
               />
             ))}

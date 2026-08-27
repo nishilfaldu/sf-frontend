@@ -59,6 +59,13 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BUILD_NUMBER: buildNumber,
     NEXT_PUBLIC_GIT_SHA: gitSha,
   },
+  // Photos travel as data URLs (~800k chars at the 512 KiB cap); 2mb leaves
+  // headroom for the rest of the form on create/replace.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
+  },
 };
 
 export default nextConfig;
