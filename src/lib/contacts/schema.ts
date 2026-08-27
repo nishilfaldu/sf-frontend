@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  decodedPhotoByteLength,
+  MAX_PHOTO_BYTES,
+  MAX_PHOTO_DATA_URL_CHARS,
+  PHOTO_DATA_URL_PATTERN,
+} from "./photo";
 import type { ContactInput } from "./types";
 
 /**
@@ -52,6 +58,21 @@ export const contactInputSchema = z.object({
     .transform((value) => value || null)
     .nullable()
     .default(null),
+  photo: z
+    .string()
+    .trim()
+    .max(MAX_PHOTO_DATA_URL_CHARS, "Photo is too large to send")
+    .refine(
+      (value) => value === "" || PHOTO_DATA_URL_PATTERN.test(value),
+      "Photo must be a JPEG, PNG, GIF, or WebP image",
+    )
+    .refine(
+      (value) => value === "" || decodedPhotoByteLength(value) <= MAX_PHOTO_BYTES,
+      "Photo must be 512 KB or smaller",
+    )
+    .transform((value) => value || null)
+    .nullable()
+    .default(null),
 }) satisfies z.ZodType<ContactInput, unknown>;
 
 export type ContactFormValues = z.input<typeof contactInputSchema>;
@@ -74,8 +95,8 @@ export function zodFieldErrors(
 /* Form metadata — one source of truth for the fields and their limits */
 /* ------------------------------------------------------------------ */
 
-export interface ContactFieldSpec {
-  name: keyof ContactInput;
+export type TextFieldSpec = {
+  name: Exclude<keyof ContactInput, "photo">;
   label: string;
   type?: "text" | "email" | "tel" | "textarea";
   required?: boolean;
@@ -84,7 +105,17 @@ export interface ContactFieldSpec {
   autoComplete?: string;
   /** Column span inside the section grid. */
   wide?: boolean;
-}
+};
+
+export type PhotoFieldSpec = {
+  name: "photo";
+  label: string;
+  type: "photo";
+  maxLength: number;
+  wide?: boolean;
+};
+
+export type ContactFieldSpec = TextFieldSpec | PhotoFieldSpec;
 
 export interface ContactFieldGroup {
   title: string;
@@ -93,6 +124,19 @@ export interface ContactFieldGroup {
 }
 
 export const CONTACT_FIELD_GROUPS: ContactFieldGroup[] = [
+  {
+    title: "Photo",
+    description: "Shown as a circular avatar. JPEG, PNG, GIF, or WebP up to 512 KB.",
+    fields: [
+      {
+        name: "photo",
+        label: "Photo",
+        type: "photo",
+        maxLength: MAX_PHOTO_DATA_URL_CHARS,
+        wide: true,
+      },
+    ],
+  },
   {
     title: "Identity",
     description: "First name, last name, and email are required.",

@@ -1,4 +1,4 @@
-import type { ContactFieldSpec } from "@/lib/contacts/schema";
+import type { TextFieldSpec } from "@/lib/contacts/schema";
 
 const CONTROL =
   "w-full rounded-md border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 transition-colors focus:bg-input";
@@ -12,7 +12,7 @@ export default function Field({
   defaultValue,
   error,
 }: {
-  field: ContactFieldSpec;
+  field: TextFieldSpec;
   defaultValue?: string;
   error?: string;
 }) {

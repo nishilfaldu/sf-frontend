@@ -4,6 +4,8 @@ import {
   formDataToValues,
   zodFieldErrors,
 } from "@/lib/contacts/schema";
+import { MAX_PHOTO_BYTES } from "@/lib/contacts/photo";
+import { TINY_PNG_DATA_URL } from "../../mocks/handlers";
 
 function values(overrides: Record<string, string> = {}) {
   return {
@@ -19,6 +21,7 @@ function values(overrides: Record<string, string> = {}) {
     postal_code: "",
     country: "",
     notes: "",
+    photo: "",
     ...overrides,
   };
 }
@@ -30,6 +33,7 @@ describe("contactInputSchema", () => {
     expect(parsed.email).toBe("ada@example.com");
     expect(parsed.phone).toBeNull();
     expect(parsed.notes).toBeNull();
+    expect(parsed.photo).toBeNull();
   });
 
   it("trims what the user typed", () => {
@@ -66,6 +70,38 @@ describe("contactInputSchema", () => {
       postal_code: "Postal code must be 20 characters or fewer",
     });
   });
+
+  it("accepts a JPEG/PNG/GIF/WebP data URL and rejects the rest", () => {
+    expect(contactInputSchema.parse(values({ photo: TINY_PNG_DATA_URL })).photo).toBe(
+      TINY_PNG_DATA_URL,
+    );
+
+    expect(
+      zodFieldErrors(
+        contactInputSchema.safeParse(values({ photo: "https://cdn.example/ada.png" }))
+          .error!,
+      ).photo,
+    ).toBe("Photo must be a JPEG, PNG, GIF, or WebP image");
+
+    expect(
+      zodFieldErrors(
+        contactInputSchema.safeParse(
+          values({ photo: "data:image/svg+xml;base64,PHN2Zy8+" }),
+        ).error!,
+      ).photo,
+    ).toBe("Photo must be a JPEG, PNG, GIF, or WebP image");
+  });
+
+  it("rejects a data URL whose decoded payload exceeds 512 KB", () => {
+    const payload = "A".repeat(Math.ceil(((MAX_PHOTO_BYTES + 1) * 4) / 3));
+    const result = contactInputSchema.safeParse(
+      values({ photo: `data:image/png;base64,${payload}` }),
+    );
+
+    expect(zodFieldErrors(result.error!).photo).toBe(
+      "Photo must be 512 KB or smaller",
+    );
+  });
 });
 
 describe("formDataToValues", () => {
@@ -79,6 +115,7 @@ describe("formDataToValues", () => {
 
     expect(extracted.first_name).toBe("Grace");
     expect(extracted.last_name).toBe("");
+    expect(extracted.photo).toBe("");
     expect(Object.keys(extracted).sort()).toEqual(
       CONTACT_FIELDS.map((field) => field.name).sort(),
     );

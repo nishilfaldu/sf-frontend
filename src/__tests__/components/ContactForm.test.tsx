@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ContactForm from "@/components/contacts/ContactForm";
-import { makeContact } from "../mocks/handlers";
+import { makeContact, TINY_PNG_DATA_URL } from "../mocks/handlers";
 import type { FormState } from "@/lib/contacts/types";
 
 function renderForm(action: jest.Mock, contact?: ReturnType<typeof makeContact>) {
@@ -25,6 +25,7 @@ describe("ContactForm", () => {
     expect(screen.getByLabelText(/^email/i)).toBeRequired();
     expect(screen.getByLabelText(/phone/i)).not.toBeRequired();
     expect(screen.getByLabelText(/notes/i).tagName).toBe("TEXTAREA");
+    expect(screen.getByRole("heading", { name: /^photo$/i })).toBeInTheDocument();
   });
 
   it("prefills from an existing contact", () => {
@@ -34,6 +35,18 @@ describe("ContactForm", () => {
     expect(screen.getByLabelText(/^email/i)).toHaveValue("ada@example.com");
     // Nulls become empty inputs rather than the string "null".
     expect(screen.getByLabelText(/street address/i)).toHaveValue("");
+  });
+
+  it("carries an existing photo through submit so PUT cannot wipe it", async () => {
+    const action = jest.fn<Promise<FormState>, [FormState, FormData]>(
+      async () => ({ status: "idle" }),
+    );
+    renderForm(action, makeContact({ photo: TINY_PNG_DATA_URL }));
+
+    await userEvent.click(screen.getByRole("button", { name: /create contact/i }));
+
+    await waitFor(() => expect(action).toHaveBeenCalled());
+    expect(action.mock.calls[0][1].get("photo")).toBe(TINY_PNG_DATA_URL);
   });
 
   it("submits the entered values to the action", async () => {
