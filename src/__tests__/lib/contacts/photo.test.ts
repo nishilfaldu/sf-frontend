@@ -1,4 +1,8 @@
-import { MAX_PHOTO_BYTES, photoErrorForFile } from "@/lib/contacts/photo";
+import {
+  decodedPhotoByteLength,
+  MAX_PHOTO_BYTES,
+  photoErrorForFile,
+} from "@/lib/contacts/photo";
 
 describe("photoErrorForFile", () => {
   it("accepts a small PNG", () => {
@@ -18,5 +22,12 @@ describe("photoErrorForFile", () => {
     Object.defineProperty(tooBig, "size", { value: MAX_PHOTO_BYTES + 1 });
 
     expect(photoErrorForFile(tooBig)).toBe("Photo must be 512 KB or smaller");
+  });
+});
+
+describe("decodedPhotoByteLength", () => {
+  it("counts decoded bytes, not the encoded character length", () => {
+    expect(decodedPhotoByteLength("data:image/png;base64,AAAA")).toBe(3);
+    expect(decodedPhotoByteLength("data:image/png;base64,AQ==")).toBe(1);
   });
 });

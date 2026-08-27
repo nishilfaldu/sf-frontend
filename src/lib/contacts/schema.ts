@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { MAX_PHOTO_DATA_URL_CHARS, PHOTO_DATA_URL_PATTERN } from "./photo";
+import {
+  decodedPhotoByteLength,
+  MAX_PHOTO_BYTES,
+  MAX_PHOTO_DATA_URL_CHARS,
+  PHOTO_DATA_URL_PATTERN,
+} from "./photo";
 import type { ContactInput } from "./types";
 
 /**
@@ -56,10 +61,14 @@ export const contactInputSchema = z.object({
   photo: z
     .string()
     .trim()
-    .max(MAX_PHOTO_DATA_URL_CHARS, "Photo must be 512 KB or smaller")
+    .max(MAX_PHOTO_DATA_URL_CHARS, "Photo is too large to send")
     .refine(
       (value) => value === "" || PHOTO_DATA_URL_PATTERN.test(value),
       "Photo must be a JPEG, PNG, GIF, or WebP image",
+    )
+    .refine(
+      (value) => value === "" || decodedPhotoByteLength(value) <= MAX_PHOTO_BYTES,
+      "Photo must be 512 KB or smaller",
     )
     .transform((value) => value || null)
     .nullable()

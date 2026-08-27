@@ -4,6 +4,7 @@ import {
   formDataToValues,
   zodFieldErrors,
 } from "@/lib/contacts/schema";
+import { MAX_PHOTO_BYTES } from "@/lib/contacts/photo";
 import { TINY_PNG_DATA_URL } from "../../mocks/handlers";
 
 function values(overrides: Record<string, string> = {}) {
@@ -89,6 +90,17 @@ describe("contactInputSchema", () => {
         ).error!,
       ).photo,
     ).toBe("Photo must be a JPEG, PNG, GIF, or WebP image");
+  });
+
+  it("rejects a data URL whose decoded payload exceeds 512 KB", () => {
+    const payload = "A".repeat(Math.ceil(((MAX_PHOTO_BYTES + 1) * 4) / 3));
+    const result = contactInputSchema.safeParse(
+      values({ photo: `data:image/png;base64,${payload}` }),
+    );
+
+    expect(zodFieldErrors(result.error!).photo).toBe(
+      "Photo must be 512 KB or smaller",
+    );
   });
 });
 

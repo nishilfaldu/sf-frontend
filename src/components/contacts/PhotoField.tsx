@@ -27,8 +27,14 @@ export default function PhotoField({
   const fileId = useId();
   const errorId = `${fileId}-error`;
   const inputRef = useRef<HTMLInputElement>(null);
+  const readAbortRef = useRef<AbortController | null>(null);
   const [photo, setPhoto] = useState(defaultPhoto);
   const [localError, setLocalError] = useState<string | null>(null);
+
+  function cancelPendingRead() {
+    readAbortRef.current?.abort();
+    readAbortRef.current = null;
+  }
 
   const message = localError ?? error;
   const preview = {
@@ -42,6 +48,8 @@ export default function PhotoField({
     const file = fileList?.[0];
     if (!file) return;
 
+    cancelPendingRead();
+
     const problem = photoErrorForFile(file);
     if (problem) {
       setLocalError(problem);
@@ -49,16 +57,22 @@ export default function PhotoField({
       return;
     }
 
+    const controller = new AbortController();
+    readAbortRef.current = controller;
     try {
-      const dataUrl = await readFileAsDataUrl(file);
+      const dataUrl = await readFileAsDataUrl(file, controller.signal);
+      if (controller.signal.aborted) return;
       setPhoto(dataUrl);
       setLocalError(null);
-    } catch {
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      if (error instanceof DOMException && error.name === "AbortError") return;
       setLocalError("Could not read that file.");
     }
   }
 
   function clearPhoto() {
+    cancelPendingRead();
     setPhoto("");
     setLocalError(null);
     if (inputRef.current) inputRef.current.value = "";

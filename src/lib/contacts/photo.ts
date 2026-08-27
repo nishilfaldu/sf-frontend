@@ -29,9 +29,30 @@ export function photoErrorForFile(file: File): string | null {
   return null;
 }
 
-export function readFileAsDataUrl(file: File): Promise<string> {
+/** Decoded payload size of a `data:...;base64,...` URL, ignoring whitespace. */
+export function decodedPhotoByteLength(dataUrl: string): number {
+  const comma = dataUrl.indexOf(",");
+  if (comma === -1) return 0;
+  const payload = dataUrl.slice(comma + 1).replace(/\s+/g, "");
+  const padding = payload.endsWith("==") ? 2 : payload.endsWith("=") ? 1 : 0;
+  return Math.max(0, Math.floor((payload.length * 3) / 4) - padding);
+}
+
+export function readFileAsDataUrl(
+  file: File,
+  signal?: AbortSignal,
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    const failAborted = () => {
+      reader.abort();
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+    if (signal?.aborted) {
+      failAborted();
+      return;
+    }
+    signal?.addEventListener("abort", failAborted, { once: true });
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () =>
       reject(reader.error ?? new Error("Could not read that file"));
