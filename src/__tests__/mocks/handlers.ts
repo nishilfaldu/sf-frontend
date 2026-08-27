@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 import { apiBaseUrl } from "@/lib/apiClient";
-import type { Contact, ContactPage } from "@/lib/contacts/types";
+import type { Address, AddressInput, Contact, ContactPage } from "@/lib/contacts/types";
 
 /** Prefix a path with the configured API base so handlers match apiClient URLs. */
 export function api(path: string): string {
@@ -47,6 +47,18 @@ export function makePage(items: Contact[], total = items.length): ContactPage {
   return { items, total, limit: 25, offset: 0 };
 }
 
+function withAddressIds(addresses: AddressInput[] | Address[] | undefined): Address[] {
+  return (addresses ?? []).map((row, index) => ({
+    id: "id" in row && typeof row.id === "number" ? row.id : index + 1,
+    type: row.type,
+    address: row.address ?? null,
+    city: row.city ?? null,
+    state: row.state ?? null,
+    postal_code: row.postal_code ?? null,
+    country: row.country ?? null,
+  }));
+}
+
 export const CONTACTS: Contact[] = [
   makeContact(),
   makeContact({
@@ -89,13 +101,28 @@ export const handlers = [
   }),
 
   http.post(api("/api/v1/contacts"), async ({ request }) => {
-    const body = (await request.json()) as Partial<Contact>;
-    return HttpResponse.json(makeContact({ ...body, id: 99 }), { status: 201 });
+    const body = (await request.json()) as Partial<Contact> & {
+      addresses?: AddressInput[];
+    };
+    const { addresses, ...rest } = body;
+    return HttpResponse.json(
+      makeContact({ ...rest, id: 99, addresses: withAddressIds(addresses) }),
+      { status: 201 },
+    );
   }),
 
   http.put(api("/api/v1/contacts/:id"), async ({ request, params }) => {
-    const body = (await request.json()) as Partial<Contact>;
-    return HttpResponse.json(makeContact({ ...body, id: Number(params.id) }));
+    const body = (await request.json()) as Partial<Contact> & {
+      addresses?: AddressInput[];
+    };
+    const { addresses, ...rest } = body;
+    return HttpResponse.json(
+      makeContact({
+        ...rest,
+        id: Number(params.id),
+        addresses: withAddressIds(addresses),
+      }),
+    );
   }),
 
   http.delete(api("/api/v1/contacts/:id"), () => new HttpResponse(null, { status: 204 })),

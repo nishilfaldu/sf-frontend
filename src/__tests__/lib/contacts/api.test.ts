@@ -9,6 +9,7 @@ import {
   getContact,
   getHealth,
   listContacts,
+  replaceContact,
   toFieldErrors,
 } from "@/lib/contacts/api";
 import type { ContactInput } from "@/lib/contacts/types";
@@ -88,6 +89,34 @@ describe("createContact", () => {
     await expect(createContact(INPUT)).resolves.toMatchObject({ id: 99 });
   });
 
+  it("gives submitted addresses server ids in the response", async () => {
+    const created = await createContact({
+      ...INPUT,
+      addresses: [
+        {
+          type: "home",
+          address: null,
+          city: "San Francisco",
+          state: "CA",
+          postal_code: null,
+          country: "USA",
+        },
+      ],
+    });
+
+    expect(created.addresses).toEqual([
+      {
+        id: 1,
+        type: "home",
+        address: null,
+        city: "San Francisco",
+        state: "CA",
+        postal_code: null,
+        country: "USA",
+      },
+    ]);
+  });
+
   it("surfaces a 409 as an ApiError", async () => {
     server.use(
       http.post(api("/api/v1/contacts"), () =>
@@ -99,6 +128,37 @@ describe("createContact", () => {
     );
 
     await expect(createContact(INPUT)).rejects.toMatchObject({ status: 409 });
+  });
+});
+
+describe("replaceContact", () => {
+  it("puts the input and returns addresses with server ids", async () => {
+    const replaced = await replaceContact(1, {
+      ...INPUT,
+      addresses: [
+        {
+          type: "work",
+          address: "1 Market St",
+          city: "San Francisco",
+          state: "CA",
+          postal_code: "94105",
+          country: "USA",
+        },
+      ],
+    });
+
+    expect(replaced.id).toBe(1);
+    expect(replaced.addresses).toEqual([
+      {
+        id: 1,
+        type: "work",
+        address: "1 Market St",
+        city: "San Francisco",
+        state: "CA",
+        postal_code: "94105",
+        country: "USA",
+      },
+    ]);
   });
 });
 
