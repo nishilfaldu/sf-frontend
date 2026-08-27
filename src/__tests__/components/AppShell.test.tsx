@@ -40,6 +40,9 @@ describe("AppShell", () => {
     );
     expect(screen.getByText("page body")).toBeInTheDocument();
     expect(screen.getByRole("contentinfo")).toHaveTextContent(/^web v/);
+    expect(
+      screen.getByRole("button", { name: /share on this wi-fi/i }),
+    ).toBeInTheDocument();
   });
 
   it("marks the current route as active", () => {

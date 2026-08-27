@@ -5,16 +5,8 @@ import { Share2 } from "lucide-react";
 import { createShareAction } from "@/app/contacts/actions";
 import Button, { type ButtonSize, type ButtonVariant } from "@/components/ui/Button";
 import WifiShareDialog from "@/components/contacts/WifiShareDialog";
+import { fetchLanJoin } from "@/lib/fetchLanJoin";
 import type { LanJoinPayload } from "@/lib/lanHosts";
-
-async function loadJoin(path: string): Promise<LanJoinPayload> {
-  const port = window.location.port || "3000";
-  const res = await fetch(`/api/lan?port=${encodeURIComponent(port)}&path=${encodeURIComponent(path)}`);
-  if (!res.ok) {
-    throw new Error("Could not read this laptop's Wi-Fi address.");
-  }
-  return (await res.json()) as LanJoinPayload;
-}
 
 /** Detail-page control: QR for a 30-minute snapshot of this one contact. */
 export default function ShareContactButton({
@@ -44,7 +36,7 @@ export default function ShareContactButton({
         return;
       }
       try {
-        setPayload(await loadJoin(`/share/${result.share.token}/`));
+        setPayload(await fetchLanJoin(`/share/${result.share.token}/`));
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Could not build a join link.");
       }

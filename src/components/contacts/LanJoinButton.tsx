@@ -4,16 +4,8 @@ import { useState } from "react";
 import { Wifi } from "lucide-react";
 import Button from "@/components/ui/Button";
 import WifiShareDialog from "@/components/contacts/WifiShareDialog";
+import { fetchLanJoin } from "@/lib/fetchLanJoin";
 import type { LanJoinPayload } from "@/lib/lanHosts";
-
-async function loadJoin(path: string): Promise<LanJoinPayload> {
-  const port = window.location.port || "3000";
-  const res = await fetch(`/api/lan?port=${encodeURIComponent(port)}&path=${encodeURIComponent(path)}`);
-  if (!res.ok) {
-    throw new Error("Could not read this laptop's Wi-Fi address.");
-  }
-  return (await res.json()) as LanJoinPayload;
-}
 
 /** Header control: QR + URL so phones on this Wi-Fi can open the address book. */
 export default function LanJoinButton() {
@@ -27,7 +19,7 @@ export default function LanJoinButton() {
     setLoading(true);
     setError(null);
     try {
-      setPayload(await loadJoin("/contacts/"));
+      setPayload(await fetchLanJoin("/contacts/"));
     } catch (cause) {
       setPayload(null);
       setError(cause instanceof Error ? cause.message : "Could not start Wi-Fi sharing.");
