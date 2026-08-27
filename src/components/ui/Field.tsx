@@ -1,6 +1,6 @@
-import type { TextFieldSpec } from "@/lib/contacts/schema";
+import type { FormControlSpec } from "@/lib/contacts/schema";
 
-const CONTROL =
+export const CONTROL =
   "w-full rounded-md border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 transition-colors focus:bg-input";
 
 /**
@@ -12,7 +12,7 @@ export default function Field({
   defaultValue,
   error,
 }: {
-  field: TextFieldSpec;
+  field: FormControlSpec;
   defaultValue?: string;
   error?: string;
 }) {
@@ -26,7 +26,6 @@ export default function Field({
     id,
     name: field.name,
     defaultValue,
-    maxLength: field.maxLength,
     required: field.required,
     placeholder: field.placeholder,
     autoComplete: field.autoComplete,
@@ -53,10 +52,23 @@ export default function Field({
         )}
       </label>
 
-      {field.type === "textarea" ? (
-        <textarea {...shared} rows={4} className={`${shared.className} resize-y`} />
+      {field.options ? (
+        <select {...shared}>
+          {field.options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : field.type === "textarea" ? (
+        <textarea
+          {...shared}
+          maxLength={field.maxLength}
+          rows={4}
+          className={`${shared.className} resize-y`}
+        />
       ) : (
-        <input {...shared} type={field.type ?? "text"} />
+        <input {...shared} type={field.type ?? "text"} maxLength={field.maxLength} />
       )}
 
       {error ? (
