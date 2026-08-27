@@ -66,7 +66,7 @@ export default async function ContactDetailPage({ params }: PageProps) {
     <div className="mx-auto max-w-lg space-y-4 px-4 py-6">
       <Link
         href="/contacts"
-        className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground lg:hidden"
       >
         <ChevronLeft className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
         All contacts
