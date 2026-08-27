@@ -1,13 +1,14 @@
 import "server-only";
 
 import { ApiError, apiFetch, apiJson } from "@/lib/apiClient";
-import type {
-  Contact,
-  ContactInput,
-  ContactPage,
-  HealthResponse,
-  SortField,
-  SortOrder,
+import {
+  MAX_LIMIT,
+  type Contact,
+  type ContactInput,
+  type ContactPage,
+  type HealthResponse,
+  type SortField,
+  type SortOrder,
 } from "./types";
 
 /**
@@ -40,6 +41,32 @@ export async function listContacts(
   return apiJson<ContactPage>(`${CONTACTS_PATH}?${query}`, {
     cache: "no-store",
   });
+}
+
+/**
+ * Walk paginated list responses until every contact is collected. The rail
+ * needs the full directory, not one page.
+ */
+export async function listAllContacts(
+  params: Omit<ListContactsParams, "limit" | "offset"> = {},
+): Promise<Contact[]> {
+  const items: Contact[] = [];
+  let offset = 0;
+  let total = Number.POSITIVE_INFINITY;
+
+  while (items.length < total) {
+    const page = await listContacts({
+      ...params,
+      limit: MAX_LIMIT,
+      offset,
+    });
+    total = page.total;
+    if (page.items.length === 0) break;
+    items.push(...page.items);
+    offset += page.items.length;
+  }
+
+  return items;
 }
 
 /** Fetch one contact, or `null` when the API reports 404. */

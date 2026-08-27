@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 import { server } from "../../mocks/server";
-import { api } from "../../mocks/handlers";
+import { api, makeContact } from "../../mocks/handlers";
 import { ApiError } from "@/lib/apiClient";
 import {
   apiErrorMessage,
@@ -8,6 +8,7 @@ import {
   deleteContact,
   getContact,
   getHealth,
+  listAllContacts,
   listContacts,
   replaceContact,
   toFieldErrors,
@@ -61,6 +62,36 @@ describe("listContacts", () => {
       sort_by: "email",
       order: "desc",
     });
+  });
+});
+
+describe("listAllContacts", () => {
+  it("walks pages until total is reached", async () => {
+    const pageOne = Array.from({ length: 2 }, (_, index) =>
+      makeContact({ id: index + 1, email: `p1-${index}@example.com` }),
+    );
+    const pageTwo = [makeContact({ id: 3, email: "p2@example.com" })];
+    const seenOffsets: string[] = [];
+
+    server.use(
+      http.get(api("/api/v1/contacts"), ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        seenOffsets.push(params.get("offset") ?? "0");
+        const offset = Number(params.get("offset") ?? 0);
+        const items = offset === 0 ? pageOne : pageTwo;
+        return HttpResponse.json({
+          items,
+          total: 3,
+          limit: Number(params.get("limit") ?? items.length),
+          offset,
+        });
+      }),
+    );
+
+    const contacts = await listAllContacts({ sortBy: "last_name", order: "asc" });
+
+    expect(contacts.map((contact) => contact.id)).toEqual([1, 2, 3]);
+    expect(seenOffsets).toEqual(["0", "2"]);
   });
 });
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import ContactsRail from "@/components/contacts/ContactsRail";
-import { listContacts } from "@/lib/contacts/api";
+import { listAllContacts } from "@/lib/contacts/api";
 import type { Contact } from "@/lib/contacts/types";
 
 /**
@@ -20,12 +20,10 @@ export default async function ContactRecordLayout({
 
   let contacts: Contact[] = [];
   try {
-    const page = await listContacts({
-      limit: 100,
+    contacts = await listAllContacts({
       sortBy: "last_name",
       order: "asc",
     });
-    contacts = page.items;
   } catch {
     contacts = [];
   }
