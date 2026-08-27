@@ -60,9 +60,36 @@ describe("PhotoField", () => {
 
     await user.click(screen.getByRole("button", { name: /edit photo/i }));
 
-    expect(screen.getByRole("dialog", { name: /photo/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /choose photo/i })).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: /photo/i });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(screen.getByRole("button", { name: /choose photo/i })).toHaveFocus();
     expect(screen.getByRole("button", { name: /remove photo/i })).toBeInTheDocument();
+  });
+
+  it("keeps tab focus inside the sheet", async () => {
+    const user = userEvent.setup();
+    render(<PhotoField defaultPhoto={TINY_PNG_DATA_URL} />);
+
+    await user.click(screen.getByRole("button", { name: /edit photo/i }));
+    expect(screen.getByRole("button", { name: /choose photo/i })).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole("button", { name: /remove photo/i })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: /cancel/i })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: /choose photo/i })).toHaveFocus();
+  });
+
+  it("returns focus to the photo after the sheet closes", async () => {
+    const user = userEvent.setup();
+    render(<PhotoField defaultPhoto={TINY_PNG_DATA_URL} />);
+
+    await user.click(screen.getByRole("button", { name: /edit photo/i }));
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    expect(screen.queryByRole("dialog", { name: /photo/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /edit photo/i })).toHaveFocus();
   });
 
   it("clears the photo from the sheet", async () => {
@@ -74,5 +101,6 @@ describe("PhotoField", () => {
 
     expect(document.querySelector('input[name="photo"]')).toHaveValue("");
     expect(screen.queryByRole("dialog", { name: /photo/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add photo/i })).toHaveFocus();
   });
 });

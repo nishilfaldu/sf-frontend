@@ -10,6 +10,10 @@ import {
 } from "@/lib/contacts/photo";
 import type { Contact } from "@/lib/contacts/types";
 
+function sheetButtons(root: HTMLElement): HTMLButtonElement[] {
+  return Array.from(root.querySelectorAll("button"));
+}
+
 /**
  * The circle is the only photo control. Empty opens the file picker;
  * a stored photo opens a bottom sheet (Choose / Remove / Cancel).
@@ -26,6 +30,9 @@ export default function PhotoField({
   const fileId = useId();
   const errorId = `${fileId}-error`;
   const inputRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef(false);
   const readAbortRef = useRef<AbortController | null>(null);
   const [photo, setPhoto] = useState(defaultPhoto);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -34,6 +41,12 @@ export default function PhotoField({
   function cancelPendingRead() {
     readAbortRef.current?.abort();
     readAbortRef.current = null;
+  }
+
+  function closeSheet() {
+    if (!sheetOpen) return;
+    restoreFocusRef.current = true;
+    setSheetOpen(false);
   }
 
   const message = localError ?? error;
@@ -45,10 +58,44 @@ export default function PhotoField({
   };
 
   useEffect(() => {
+    if (sheetOpen) {
+      const root = sheetRef.current;
+      if (!root) return;
+      sheetButtons(root)[0]?.focus();
+      return;
+    }
+    if (!restoreFocusRef.current) return;
+    restoreFocusRef.current = false;
+    triggerRef.current?.focus();
+  }, [sheetOpen]);
+
+  useEffect(() => {
     if (!sheetOpen) return;
 
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setSheetOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        restoreFocusRef.current = true;
+        setSheetOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab" || !sheetRef.current) return;
+
+      const buttons = sheetButtons(sheetRef.current);
+      if (buttons.length === 0) return;
+
+      const first = buttons[0];
+      const last = buttons[buttons.length - 1];
+      if (!first || !last) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     document.addEventListener("keydown", onKey);
@@ -60,7 +107,7 @@ export default function PhotoField({
     if (!file) return;
 
     cancelPendingRead();
-    setSheetOpen(false);
+    closeSheet();
 
     const problem = photoErrorForFile(file);
     if (problem) {
@@ -87,11 +134,12 @@ export default function PhotoField({
     cancelPendingRead();
     setPhoto("");
     setLocalError(null);
-    setSheetOpen(false);
+    closeSheet();
     if (inputRef.current) inputRef.current.value = "";
   }
 
   function openPicker() {
+    closeSheet();
     inputRef.current?.click();
   }
 
@@ -111,12 +159,15 @@ export default function PhotoField({
   return (
     <div className="flex flex-col items-center">
       <button
+        ref={triggerRef}
         type="button"
         onClick={onCircleClick}
         onDragOver={(event) => event.preventDefault()}
         onDrop={onDrop}
         className="rounded-full"
         aria-label={photo ? "Edit photo" : "Add photo"}
+        aria-haspopup={photo ? "dialog" : undefined}
+        aria-expanded={photo ? sheetOpen : undefined}
       >
         {photo ? (
           <ContactAvatar contact={preview} size="hero" />
@@ -153,12 +204,15 @@ export default function PhotoField({
         <div className="fixed inset-0 z-50">
           <button
             type="button"
+            tabIndex={-1}
             className="absolute inset-0 bg-black/20"
             aria-label="Dismiss"
-            onClick={() => setSheetOpen(false)}
+            onClick={closeSheet}
           />
           <div
+            ref={sheetRef}
             role="dialog"
+            aria-modal="true"
             aria-label="Photo"
             className="absolute inset-x-0 bottom-6 mx-auto w-[min(22rem,calc(100%-2.5rem))]"
           >
@@ -181,7 +235,7 @@ export default function PhotoField({
             <button
               type="button"
               className="mt-2 block w-full rounded-[14px] bg-card px-3 py-3.5 text-[17px] font-medium text-primary"
-              onClick={() => setSheetOpen(false)}
+              onClick={closeSheet}
             >
               Cancel
             </button>
