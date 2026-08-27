@@ -126,4 +126,35 @@ export const handlers = [
   }),
 
   http.delete(api("/api/v1/contacts/:id"), () => new HttpResponse(null, { status: 204 })),
+
+  http.get(api("/api/v1/lan"), () =>
+    HttpResponse.json({
+      addresses: ["192.168.1.42"],
+      bind_host: "127.0.0.1",
+      bind_port: 8000,
+    }),
+  ),
+
+  http.get(api("/api/v1/qr"), () =>
+    HttpResponse.text('<svg xmlns="http://www.w3.org/2000/svg"></svg>', {
+      headers: { "Content-Type": "image/svg+xml" },
+    }),
+  ),
+
+  http.post(api("/api/v1/contacts/:id/share"), ({ params }) =>
+    HttpResponse.json(
+      {
+        token: "shareTok",
+        expires_at: "2026-08-27T03:22:58.189507Z",
+        contact_id: Number(params.id),
+      },
+      { status: 201 },
+    ),
+  ),
+
+  http.get(api("/api/v1/shares/:token"), ({ params }) =>
+    params.token === "shareTok"
+      ? HttpResponse.json(CONTACTS[0])
+      : HttpResponse.json({ detail: "Share not found" }, { status: 404 }),
+  ),
 ];

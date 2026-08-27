@@ -68,6 +68,20 @@ export interface HealthResponse {
   contacts: number;
 }
 
+/** `LanStatus` — IPv4 addresses peers on the same Wi-Fi can try. */
+export interface LanStatus {
+  addresses: string[];
+  bind_host: string;
+  bind_port: number;
+}
+
+/** `ShareCreated` — a 30-minute token for one contact snapshot. */
+export interface ContactShare {
+  token: string;
+  expires_at: string;
+  contact_id: number;
+}
+
 /** Sort fields the API's allow-list accepts. */
 export const SORT_FIELDS = [
   "id",

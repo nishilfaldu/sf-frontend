@@ -5,7 +5,9 @@ import type {
   Contact,
   ContactInput,
   ContactPage,
+  ContactShare,
   HealthResponse,
+  LanStatus,
   SortField,
   SortOrder,
 } from "./types";
@@ -102,6 +104,36 @@ export async function getHealth(): Promise<HealthResponse | null> {
     });
   } catch {
     return null;
+  }
+}
+
+export async function getLan(): Promise<LanStatus> {
+  return apiJson<LanStatus>("/api/v1/lan", { cache: "no-store" });
+}
+
+export async function getQrSvg(data: string): Promise<string> {
+  const res = await apiFetch(`/api/v1/qr?data=${encodeURIComponent(data)}`);
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.text().catch(() => ""));
+  }
+  return res.text();
+}
+
+export async function createShare(id: number): Promise<ContactShare> {
+  return apiJson<ContactShare>(`${CONTACTS_PATH}/${id}/share`, {
+    method: "POST",
+  });
+}
+
+/** Fetch a shared snapshot, or `null` when the token is unknown or expired. */
+export async function getShare(token: string): Promise<Contact | null> {
+  try {
+    return await apiJson<Contact>(`/api/v1/shares/${token}`, {
+      cache: "no-store",
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
   }
 }
 

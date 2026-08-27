@@ -19,6 +19,16 @@ The backend must be running (default `http://127.0.0.1:8000`). If it is not, the
 list page says so rather than blowing up, and the header badge shows
 `api unreachable`.
 
+## Share on this Wi-Fi
+
+The header **Wi-Fi** button shows a QR code for `http://<this-laptop>:3000`.
+Phones on the same network scan it and get the live address book. On a contact,
+**Share** mints a 30-minute link to a card with **Add to phone** (vCard).
+
+`next.config.ts` allows whatever LAN IPv4 this machine currently has, so HMR
+works from a phone — not only a hardcoded `192.168.0.15`. Guest Wi-Fi with
+client isolation will block this; use a normal LAN or a hotspot from the laptop.
+
 ## What you should see
 
 Use these two screenshots as the smoke test. If `http://localhost:3000` looks

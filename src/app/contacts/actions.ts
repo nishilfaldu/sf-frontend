@@ -6,6 +6,7 @@ import { ApiError, ApiUnreachableError } from "@/lib/apiClient";
 import {
   apiErrorMessage,
   createContact,
+  createShare,
   deleteContact,
   replaceContact,
   toFieldErrors,
@@ -15,7 +16,7 @@ import {
   formDataToValues,
   zodFieldErrors,
 } from "@/lib/contacts/schema";
-import type { Contact, FormState } from "@/lib/contacts/types";
+import type { Contact, ContactShare, FormState } from "@/lib/contacts/types";
 
 /** Mutations for the contacts UI. Every one of these runs only on the server. */
 
@@ -123,4 +124,28 @@ export async function deleteContactAction(
   invalidate(contactId);
   if (redirectToList) redirect("/contacts");
   return {};
+}
+
+export interface ShareResult {
+  share?: ContactShare;
+  error?: string;
+}
+
+/** Snapshot a contact into a 30-minute share token for someone on this Wi-Fi. */
+export async function createShareAction(contactId: number): Promise<ShareResult> {
+  try {
+    const share = await createShare(contactId);
+    return { share };
+  } catch (error) {
+    if (error instanceof ApiUnreachableError) return { error: UNREACHABLE };
+    if (error instanceof ApiError) {
+      return {
+        error:
+          error.status === 404
+            ? "That contact is no longer in the address book."
+            : apiErrorMessage(error, "The contact could not be shared."),
+      };
+    }
+    throw error;
+  }
 }

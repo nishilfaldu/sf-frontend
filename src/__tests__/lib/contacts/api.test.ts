@@ -5,9 +5,13 @@ import { ApiError } from "@/lib/apiClient";
 import {
   apiErrorMessage,
   createContact,
+  createShare,
   deleteContact,
   getContact,
   getHealth,
+  getLan,
+  getQrSvg,
+  getShare,
   listContacts,
   replaceContact,
   toFieldErrors,
@@ -186,6 +190,33 @@ describe("getHealth", () => {
   it("returns null instead of throwing when the probe fails", async () => {
     server.use(http.get(api("/health"), () => HttpResponse.error()));
     await expect(getHealth()).resolves.toBeNull();
+  });
+});
+
+describe("Wi-Fi share helpers", () => {
+  it("reads LAN addresses", async () => {
+    await expect(getLan()).resolves.toMatchObject({
+      addresses: ["192.168.1.42"],
+      bind_port: 8000,
+    });
+  });
+
+  it("returns QR markup as text", async () => {
+    await expect(getQrSvg("http://192.168.1.42:3000/contacts/")).resolves.toContain(
+      "<svg",
+    );
+  });
+
+  it("mints a share token", async () => {
+    await expect(createShare(1)).resolves.toMatchObject({
+      token: "shareTok",
+      contact_id: 1,
+    });
+  });
+
+  it("returns a snapshot for a live token and null for an unknown one", async () => {
+    await expect(getShare("shareTok")).resolves.toMatchObject({ id: 1 });
+    await expect(getShare("nope")).resolves.toBeNull();
   });
 });
 

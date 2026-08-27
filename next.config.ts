@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { lanIPv4Addresses } from "./src/lib/lanHosts";
 
 function git(args: string): string | undefined {
   try {
@@ -48,7 +49,7 @@ const nextConfig: NextConfig = {
   // machine on the LAN. Matched on hostname alone: ports are ignored, so this has
   // nothing to do with the backend's :8000. `localhost` and `**.localhost` are
   // already allowed by default; they are listed for the next person reading this.
-  allowedDevOrigins: ["localhost", "127.0.0.1", "192.168.0.15"],
+  allowedDevOrigins: ["localhost", "127.0.0.1", ...lanIPv4Addresses()],
   // `/` is not a page: the app is the contacts manager. A routing-layer redirect
   // is a real 308, unlike a prerendered page that would meta-refresh the browser.
   async redirects() {

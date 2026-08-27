@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import VersionFooter from "@/components/VersionFooter";
+import LanJoinButton from "@/components/contacts/LanJoinButton";
 
 const NAV_LINKS: {
   label: string;
@@ -68,6 +69,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-1">
+            <LanJoinButton />
             <ThemeToggle />
           </div>
         </div>
