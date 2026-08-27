@@ -1,5 +1,4 @@
-import type { CSSProperties } from "react";
-import { avatarHue, initials } from "@/lib/contacts/format";
+import { initials } from "@/lib/contacts/format";
 import type { Contact } from "@/lib/contacts/types";
 
 const SIZES = {
@@ -7,6 +6,7 @@ const SIZES = {
   md: "h-10 w-10 text-sm",
   lg: "h-14 w-14 text-lg",
   xl: "h-20 w-20 text-xl",
+  hero: "h-40 w-40 text-[52px]",
 } as const;
 
 type AvatarContact = Pick<Contact, "first_name" | "last_name" | "email" | "photo">;
@@ -29,20 +29,15 @@ export default function ContactAvatar({
         src={contact.photo}
         alt=""
         aria-hidden="true"
-        className={`inline-block shrink-0 overflow-hidden rounded-full aspect-square object-cover ${sizeClass}`}
+        className={`contact-photo inline-block shrink-0 overflow-hidden rounded-full aspect-square object-cover ${sizeClass}`}
       />
     );
   }
 
-  const style = {
-    "--avatar-hue": avatarHue(contact.email),
-  } as CSSProperties;
-
   return (
     <span
       aria-hidden="true"
-      style={style}
-      className={`contact-avatar inline-flex shrink-0 select-none items-center justify-center rounded-full font-display font-semibold ${sizeClass}`}
+      className={`contact-avatar inline-flex shrink-0 select-none items-center justify-center rounded-full ${sizeClass}`}
     >
       {initials(contact)}
     </span>

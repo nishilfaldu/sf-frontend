@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Pencil } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import ContactAvatar from "@/components/contacts/ContactAvatar";
+import ContactQuickActions from "@/components/contacts/ContactQuickActions";
 import DeleteContactButton from "@/components/contacts/DeleteContactButton";
-import { buttonClasses } from "@/components/ui/Button";
 import { getContact } from "@/lib/contacts/api";
-import { addressLine, formatTimestamp, groupedAddresses, jobLine } from "@/lib/contacts/format";
+import {
+  addressLine,
+  formatTimestamp,
+  groupedAddresses,
+  jobLine,
+} from "@/lib/contacts/format";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -27,11 +32,23 @@ export async function generateMetadata({
   };
 }
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+function Row({
+  label,
+  children,
+  tinted = false,
+}: {
+  label: string;
+  children: ReactNode;
+  tinted?: boolean;
+}) {
   return (
-    <div className="grid gap-1 border-b border-hairline px-4 py-3 last:border-b-0 sm:grid-cols-[10rem_1fr] sm:gap-4">
-      <dt className="text-[13px] text-muted-foreground">{label}</dt>
-      <dd className="break-words text-sm text-foreground">
+    <div className="flex flex-col items-start gap-px border-b border-hairline px-4 py-2.5 last:border-b-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd
+        className={`break-words text-[17px] ${
+          tinted ? "text-primary" : "text-foreground"
+        }`}
+      >
         {children ?? <span className="text-muted-foreground/50">—</span>}
       </dd>
     </div>
@@ -46,7 +63,7 @@ export default async function ContactDetailPage({ params }: PageProps) {
   const addressGroups = groupedAddresses(contact.addresses);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
+    <div className="mx-auto max-w-lg space-y-4 px-4 py-6">
       <Link
         href="/contacts"
         className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"
@@ -55,108 +72,110 @@ export default async function ContactDetailPage({ params }: PageProps) {
         All contacts
       </Link>
 
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <ContactAvatar contact={contact} size="xl" />
-          <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-              {contact.full_name}
-            </h1>
-            {subtitle ? (
-              <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
-            ) : null}
-          </div>
-        </div>
+      <div className="flex justify-end">
+        <Link
+          href={`/contacts/${contact.id}/edit`}
+          className="text-[17px] text-primary"
+        >
+          Edit
+        </Link>
+      </div>
 
-        <div className="flex items-center gap-2">
+      <header className="flex flex-col items-center text-center">
+        {contact.photo ? (
+          <ContactAvatar contact={contact} size="hero" />
+        ) : (
           <Link
             href={`/contacts/${contact.id}/edit`}
-            className={buttonClasses("secondary")}
+            className="rounded-full"
+            aria-label="Add photo"
           >
-            <Pencil className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-            Edit
+            <ContactAvatar contact={contact} size="hero" />
           </Link>
-          <DeleteContactButton
-            contactId={contact.id}
-            contactName={contact.full_name}
-            redirectToList
-            variant="danger"
-            size="md"
-            withLabel
-          />
-        </div>
+        )}
+        {contact.photo ? null : (
+          <Link
+            href={`/contacts/${contact.id}/edit`}
+            className="mt-2.5 text-[17px] text-primary"
+          >
+            Add Photo
+          </Link>
+        )}
+
+        <h1 className="mt-4 font-display text-[28px] font-semibold tracking-tight text-foreground">
+          {contact.full_name}
+        </h1>
+        {subtitle ? (
+          <p className="mt-1 text-[15px] text-muted-foreground">{subtitle}</p>
+        ) : null}
+
+        <ContactQuickActions email={contact.email} phone={contact.phone} />
       </header>
 
-      <dl className="rounded-lg border border-border bg-card">
-        <Row label="Email">
-          <a href={`mailto:${contact.email}`} className="text-primary hover:underline">
-            {contact.email}
-          </a>
+      <dl className="overflow-hidden rounded-xl bg-card">
+        <Row label="email" tinted>
+          <a href={`mailto:${contact.email}`}>{contact.email}</a>
         </Row>
-        <Row label="Phone">
+        <Row label="phone">
           {contact.phone ? (
-            <a href={`tel:${contact.phone}`} className="text-primary hover:underline">
+            <a href={`tel:${contact.phone}`} className="text-foreground">
               {contact.phone}
             </a>
           ) : null}
         </Row>
-        <Row label="Company">{contact.company}</Row>
-        <Row label="Job title">{contact.job_title}</Row>
-        <Row label="Notes">
+        <Row label="company">{contact.company}</Row>
+        <Row label="title">{contact.job_title}</Row>
+        <Row label="notes">
           {contact.notes ? (
             <span className="whitespace-pre-wrap">{contact.notes}</span>
           ) : null}
         </Row>
       </dl>
 
-      <section className="rounded-lg border border-border bg-card">
-        <div className="border-b border-hairline px-4 py-3">
-          <h2 className="font-display text-sm font-semibold text-foreground">
-            Addresses
-          </h2>
-          <p className="text-[13px] text-muted-foreground">
-            Grouped by Home, Work, and Other.
-          </p>
-        </div>
+      <dl className="overflow-hidden rounded-xl bg-card">
         {addressGroups.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-muted-foreground/70">
-            No addresses yet.
-          </p>
+          <Row label="address">
+            <span className="text-muted-foreground/70">No addresses yet.</span>
+          </Row>
         ) : (
-          <div className="divide-y divide-hairline">
-            {addressGroups.map((group) => (
-              <div key={group.type} className="px-4 py-3">
-                <h3 className="text-[13px] font-medium text-muted-foreground">
-                  {group.label}
-                </h3>
-                <ul className="mt-2 space-y-1.5">
-                  {group.items.map((item) => (
-                    <li key={item.id} className="text-sm text-foreground">
-                      {addressLine(item) ?? (
-                        <span className="text-muted-foreground/50">
-                          No details
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+          addressGroups.flatMap((group) =>
+            group.items.map((item) => (
+              <Row key={item.id} label={group.label.toLowerCase()}>
+                {addressLine(item) ?? (
+                  <span className="text-muted-foreground/50">No details</span>
+                )}
+              </Row>
+            )),
+          )
         )}
-      </section>
+      </dl>
 
-      <dl className="rounded-lg border border-border bg-card/50 text-[13px]">
-        <Row label="ID">
-          <span className="font-mono">{contact.id}</span>
+      <dl className="overflow-hidden rounded-xl bg-card/50 text-[13px]">
+        <Row label="id">
+          <span className="font-mono text-sm">{contact.id}</span>
         </Row>
-        <Row label="Created">
-          <span className="font-mono">{formatTimestamp(contact.created_at)}</span>
+        <Row label="created">
+          <span className="font-mono text-sm">
+            {formatTimestamp(contact.created_at)}
+          </span>
         </Row>
-        <Row label="Last updated">
-          <span className="font-mono">{formatTimestamp(contact.updated_at)}</span>
+        <Row label="updated">
+          <span className="font-mono text-sm">
+            {formatTimestamp(contact.updated_at)}
+          </span>
         </Row>
       </dl>
+
+      <div className="flex justify-center pt-2">
+        <DeleteContactButton
+          contactId={contact.id}
+          contactName={contact.full_name}
+          redirectToList
+          variant="ghost"
+          size="md"
+          withLabel
+        />
+      </div>
     </div>
   );
 }

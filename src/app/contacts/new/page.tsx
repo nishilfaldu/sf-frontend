@@ -20,7 +20,7 @@ export default function NewContactPage() {
           <ChevronLeft className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
           All contacts
         </Link>
-        <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="mt-2 font-display text-[22px] font-semibold tracking-tight text-foreground">
           New contact
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

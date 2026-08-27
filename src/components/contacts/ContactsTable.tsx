@@ -52,7 +52,7 @@ export default function ContactsTable({
               >
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-3">
-                    <ContactAvatar contact={contact} size="sm" />
+                    <ContactAvatar contact={contact} size="md" />
                     <div className="min-w-0">
                       <Link
                         href={`/contacts/${contact.id}`}

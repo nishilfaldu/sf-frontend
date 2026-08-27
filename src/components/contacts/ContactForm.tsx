@@ -81,16 +81,23 @@ function ContactFieldset({
   valueFor: (name: ScalarFieldName) => string;
   fieldErrors?: Partial<Record<string, string>>;
 }) {
+  const photoOnly =
+    group.fields.length === 1 && group.fields[0]?.type === "photo";
+
   return (
     <fieldset className="space-y-4">
       <legend className="sr-only">{group.title}</legend>
-      <div className="border-b border-hairline pb-2">
-        <h2 className="font-display text-sm font-semibold text-foreground">
-          {group.title}
-        </h2>
-        <p className="text-[13px] text-muted-foreground">{group.description}</p>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      {photoOnly ? (
+        <h2 className="sr-only">{group.title}</h2>
+      ) : (
+        <div className="border-b border-hairline pb-2">
+          <h2 className="font-display text-sm font-semibold text-foreground">
+            {group.title}
+          </h2>
+          <p className="text-[13px] text-muted-foreground">{group.description}</p>
+        </div>
+      )}
+      <div className={photoOnly ? undefined : "grid gap-4 sm:grid-cols-2"}>
         {group.fields.map((field) => (
           <ContactFieldControl
             key={field.name}
