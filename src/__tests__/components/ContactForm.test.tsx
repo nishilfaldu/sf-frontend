@@ -26,6 +26,8 @@ describe("ContactForm", () => {
     expect(screen.getByLabelText(/phone/i)).not.toBeRequired();
     expect(screen.getByLabelText(/notes/i).tagName).toBe("TEXTAREA");
     expect(screen.getByRole("heading", { name: /^photo$/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^addresses$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add address/i })).toBeInTheDocument();
   });
 
   it("prefills from an existing contact", () => {
@@ -33,8 +35,8 @@ describe("ContactForm", () => {
 
     expect(screen.getByLabelText(/first name/i)).toHaveValue("Ada");
     expect(screen.getByLabelText(/^email/i)).toHaveValue("ada@example.com");
-    // Nulls become empty inputs rather than the string "null".
-    expect(screen.getByLabelText(/street address/i)).toHaveValue("");
+    expect(screen.getByLabelText(/city/i)).toHaveValue("San Francisco");
+    expect(screen.getByLabelText(/^type/i)).toHaveValue("home");
   });
 
   it("carries an existing photo through submit so PUT cannot wipe it", async () => {
@@ -65,6 +67,17 @@ describe("ContactForm", () => {
     const formData = action.mock.calls[0][1];
     expect(formData.get("first_name")).toBe("Grace");
     expect(formData.get("email")).toBe("grace@example.com");
+    expect(formData.get("address_count")).toBe("1");
+    expect(formData.get("addresses.0.type")).toBe("home");
+  });
+
+  it("lets you drop the last address row", async () => {
+    renderForm(jest.fn());
+
+    await userEvent.click(screen.getByRole("button", { name: /remove address 1/i }));
+
+    expect(screen.getByText(/no addresses yet/i)).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: /^type/i })).not.toBeInTheDocument();
   });
 
   it("shows the summary and the per-field errors the action returns", async () => {

@@ -7,7 +7,7 @@ import ContactAvatar from "@/components/contacts/ContactAvatar";
 import DeleteContactButton from "@/components/contacts/DeleteContactButton";
 import { buttonClasses } from "@/components/ui/Button";
 import { getContact } from "@/lib/contacts/api";
-import { addressLine, formatTimestamp, jobLine } from "@/lib/contacts/format";
+import { addressLine, formatTimestamp, groupedAddresses, jobLine } from "@/lib/contacts/format";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -43,7 +43,7 @@ export default async function ContactDetailPage({ params }: PageProps) {
   if (!contact) notFound();
 
   const subtitle = jobLine(contact);
-  const address = addressLine(contact);
+  const addressGroups = groupedAddresses(contact.addresses);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
@@ -102,13 +102,49 @@ export default async function ContactDetailPage({ params }: PageProps) {
         </Row>
         <Row label="Company">{contact.company}</Row>
         <Row label="Job title">{contact.job_title}</Row>
-        <Row label="Address">{address}</Row>
         <Row label="Notes">
           {contact.notes ? (
             <span className="whitespace-pre-wrap">{contact.notes}</span>
           ) : null}
         </Row>
       </dl>
+
+      <section className="rounded-lg border border-border bg-card">
+        <div className="border-b border-hairline px-4 py-3">
+          <h2 className="font-display text-sm font-semibold text-foreground">
+            Addresses
+          </h2>
+          <p className="text-[13px] text-muted-foreground">
+            Grouped by Home, Work, and Other.
+          </p>
+        </div>
+        {addressGroups.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-muted-foreground/70">
+            No addresses yet.
+          </p>
+        ) : (
+          <div className="divide-y divide-hairline">
+            {addressGroups.map((group) => (
+              <div key={group.type} className="px-4 py-3">
+                <h3 className="text-[13px] font-medium text-muted-foreground">
+                  {group.label}
+                </h3>
+                <ul className="mt-2 space-y-1.5">
+                  {group.items.map((item) => (
+                    <li key={item.id} className="text-sm text-foreground">
+                      {addressLine(item) ?? (
+                        <span className="text-muted-foreground/50">
+                          No details
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <dl className="rounded-lg border border-border bg-card/50 text-[13px]">
         <Row label="ID">

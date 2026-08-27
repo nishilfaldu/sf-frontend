@@ -7,7 +7,7 @@ import {
 import { MAX_PHOTO_BYTES } from "@/lib/contacts/photo";
 import { TINY_PNG_DATA_URL } from "../../mocks/handlers";
 
-function values(overrides: Record<string, string> = {}) {
+function values(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     first_name: "Ada",
     last_name: "Lovelace",
@@ -15,13 +15,9 @@ function values(overrides: Record<string, string> = {}) {
     phone: "",
     company: "",
     job_title: "",
-    address: "",
-    city: "",
-    state: "",
-    postal_code: "",
-    country: "",
     notes: "",
     photo: "",
+    addresses: [],
     ...overrides,
   };
 }
@@ -34,6 +30,7 @@ describe("contactInputSchema", () => {
     expect(parsed.phone).toBeNull();
     expect(parsed.notes).toBeNull();
     expect(parsed.photo).toBeNull();
+    expect(parsed.addresses).toEqual([]);
   });
 
   it("trims what the user typed", () => {
@@ -62,13 +59,61 @@ describe("contactInputSchema", () => {
 
   it("enforces the API's length limits", () => {
     const result = contactInputSchema.safeParse(
-      values({ first_name: "a".repeat(101), postal_code: "9".repeat(21) }),
+      values({
+        first_name: "a".repeat(101),
+        addresses: [{ type: "home", postal_code: "9".repeat(21) }],
+      }),
     );
 
     expect(zodFieldErrors(result.error!)).toEqual({
       first_name: "First name must be 100 characters or fewer",
-      postal_code: "Postal code must be 20 characters or fewer",
+      "addresses.0.postal_code": "Postal code must be 20 characters or fewer",
     });
+  });
+
+  it("keeps typed addresses and drops blank rows", () => {
+    const parsed = contactInputSchema.parse(
+      values({
+        addresses: [
+          {
+            type: "work",
+            address: "1 Market St",
+            city: "San Francisco",
+            state: "CA",
+            postal_code: "94105",
+            country: "USA",
+          },
+          {
+            type: "home",
+            address: "",
+            city: "",
+            state: "",
+            postal_code: "",
+            country: "",
+          },
+        ],
+      }),
+    );
+
+    expect(parsed.addresses).toEqual([
+      {
+        type: "work",
+        address: "1 Market St",
+        city: "San Francisco",
+        state: "CA",
+        postal_code: "94105",
+        country: "USA",
+      },
+    ]);
+  });
+
+  it("rejects an unknown address type", () => {
+    const result = contactInputSchema.safeParse(
+      values({ addresses: [{ type: "vacation", city: "Tahoe" }] }),
+    );
+
+    expect(result.success).toBe(false);
+    expect(zodFieldErrors(result.error!)["addresses.0.type"]).toBeTruthy();
   });
 
   it("accepts a JPEG/PNG/GIF/WebP data URL and rejects the rest", () => {
@@ -116,8 +161,38 @@ describe("formDataToValues", () => {
     expect(extracted.first_name).toBe("Grace");
     expect(extracted.last_name).toBe("");
     expect(extracted.photo).toBe("");
+    expect(extracted.addresses).toEqual([]);
     expect(Object.keys(extracted).sort()).toEqual(
-      CONTACT_FIELDS.map((field) => field.name).sort(),
+      [...CONTACT_FIELDS.map((field) => field.name), "addresses"].sort(),
     );
+  });
+
+  it("rebuilds indexed address rows from FormData", () => {
+    const formData = new FormData();
+    formData.set("address_count", "2");
+    formData.set("addresses.0.type", "home");
+    formData.set("addresses.0.city", "San Francisco");
+    formData.set("addresses.1.type", "work");
+    formData.set("addresses.1.address", "1 Market St");
+    formData.set("addresses.1.city", "San Francisco");
+
+    expect(formDataToValues(formData).addresses).toEqual([
+      {
+        type: "home",
+        address: "",
+        city: "San Francisco",
+        state: "",
+        postal_code: "",
+        country: "",
+      },
+      {
+        type: "work",
+        address: "1 Market St",
+        city: "San Francisco",
+        state: "",
+        postal_code: "",
+        country: "",
+      },
+    ]);
   });
 });
