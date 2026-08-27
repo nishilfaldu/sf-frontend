@@ -102,16 +102,32 @@
 }
 
 @layer components {
-  /* Avatar tint. The hue comes from the contact's email (see lib/contacts/format),
-     so it is stable per person; only the lightness changes between themes. */
+  /* Apple-style initials: one cool gray disc, white letters. */
   .contact-avatar {
-    background: hsl(var(--avatar-hue) 65% 60% / 0.18);
-    color: hsl(var(--avatar-hue) 70% 74%);
+    background: rgb(72 72 74);
+    color: rgb(245 245 247);
+    font-weight: 500;
+    letter-spacing: 0.04em;
   }
 
   [data-theme="light"] .contact-avatar {
-    background: hsl(var(--avatar-hue) 70% 45% / 0.12);
-    color: hsl(var(--avatar-hue) 65% 32%);
+    background: rgb(209 209 214);
+    color: rgb(255 255 255);
+  }
+
+  /* Hairline + soft shadow instead of a chunky ring. */
+  .contact-photo {
+    box-shadow:
+      inset 0 0.5px 0 rgb(255 255 255 / 0.35),
+      0 0 0 0.5px rgb(0 0 0 / 0.12),
+      0 8px 24px rgb(0 0 0 / 0.18);
+  }
+
+  [data-theme="light"] .contact-photo {
+    box-shadow:
+      inset 0 0.5px 0 rgb(255 255 255 / 0.7),
+      0 0 0 0.5px rgb(0 0 0 / 0.06),
+      0 8px 24px rgb(0 0 0 / 0.08);
   }
 }
 

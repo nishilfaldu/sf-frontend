@@ -31,13 +31,13 @@ export default async function EditContactPage({ params }: PageProps) {
       <div>
         <Link
           href={`/contacts/${contact.id}`}
-          className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground lg:hidden"
         >
           <ChevronLeft className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
           {contact.full_name}
         </Link>
-        <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">
-          Edit contact
+        <h1 className="mt-2 font-display text-[22px] font-semibold tracking-tight text-foreground">
+          Info
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Saving replaces every field, so a box you empty is cleared.
